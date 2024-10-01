@@ -30,6 +30,25 @@ app.post('/register', async (req, res) => {
     res.status(200).json({ message: 'User created' });
 });
 
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    const user = users.find((u) => u.username === username);
+
+    if (!user) {
+        return res.status(400).json({ message: 'User not found.' });
+    }
+
+    const isMatch = bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+        return res.status(400).json({ message: 'Wrong password.' });
+    }
+
+    const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '1h' });
+
+    res.json({ token });
+});
+
 app.get('/users', (req, res) => res.json({ users }));
 
 app.listen(PORT, () => console.log(`Server started on port: ${PORT}`));
