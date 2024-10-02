@@ -11,6 +11,22 @@ const users = [];
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+const verifyToken = (req, res, next) => {
+    const token = req.headers['authorization'];
+
+    if (!token) {
+        return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    try {
+        const decode = jwt.decode(token, JWT_SECRET);
+        req.user = decode;
+        next();
+    } catch (error) {
+        return res.status(403).json({ message: 'Token is not valid' });
+    }
+};
+
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     const isUserExist = users.find((u) => u.username === username);
@@ -47,6 +63,10 @@ app.post('/login', (req, res) => {
     const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '1h' });
 
     res.json({ token });
+});
+
+app.get('/protected', verifyToken, (req, res) => {
+    res.status(200).send({ message: `Find user with name: ${req.user.username}` });
 });
 
 app.get('/users', (req, res) => res.json({ users }));
